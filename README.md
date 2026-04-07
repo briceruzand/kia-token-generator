@@ -5,6 +5,14 @@ Generate a refresh token for the **Kia Connect API (Europe)** to use with the [k
 > **⚠️ This tool works ONLY for European Kia accounts.**  
 > For Hyundai EU, see: [hyundai_kia_connect_api#925](https://github.com/Hyundai-Kia-Connect/hyundai_kia_connect_api/issues/925)
 
+## What changed in v2.5.2
+
+- **Fixed: macOS token not showing (main fix)** — after login, the script was opening a **new tab** for the OAuth redirect instead of navigating in the existing tab. On macOS (and sometimes Linux), the new tab did not carry the session cookies, so the redirect failed silently and the authorization code was never captured. Now it navigates in the existing tab using `Page.navigate` via CDP, preserving the session
+- **Faster login detection** — added detection of landing on `www.kia.com` after login as an additional signal (previously only `java.util.NoSuchElementException` in page body was checked)
+- **Chrome crash detection** — if the user closes the Chrome window during login or OAuth redirect, the script now exits immediately with a clear error instead of spinning for up to 5 minutes
+- **Unexpected token format warning** — if the authorization code doesn't match the expected UUID.UUID.UUID pattern, a `[WARN]` message is printed before falling back to generic extraction
+- **Zombie process fix** — `chrome.wait()` is now called after `chrome.kill()` to prevent orphaned Chrome processes on macOS/Linux
+
 ## What changed in v2.5.1
 
 - **Fixed: "Mismatched token redirect uri" (HTTP 400)** — the script was incorrectly capturing the authorization code from the login redirect URL (`kia.com`) instead of the OAuth redirect URL (`prd.eu-ccapi.kia.com`). Now it strictly waits for the correct redirect and ignores codes from wrong URLs
@@ -278,7 +286,7 @@ The Selenium-based `KiaFetchApiTokensSelenium.py` requires matching ChromeDriver
 1. Launches Chrome with `--remote-debugging-port` and a mobile user-agent (required by Kia's API)
 2. Opens the Kia login page — you log in manually (CAPTCHA cannot be automated)
 3. Monitors the browser via CDP — when it detects `java.util.NoSuchElementException` in the page content (= login complete), it proceeds automatically
-4. Navigates to the OAuth authorize endpoint via CDP WebSocket
+4. Navigates the existing browser tab to the OAuth authorize endpoint via CDP `Page.navigate` (preserves session cookies)
 5. Scans all open tabs for a redirect URL containing the authorization `code`, prioritizing the expected Kia API endpoint (`prd.eu-ccapi.kia.com:8080`)
 6. Closes the browser (no longer needed)
 7. Exchanges the code for `access_token` + `refresh_token` via HTTP POST
