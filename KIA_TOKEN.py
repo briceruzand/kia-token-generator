@@ -5,7 +5,7 @@ Kia OAuth2 Token Fetcher — Chrome DevTools Protocol (no Selenium required)
 Generates a refresh_token for Kia Connect EU integration with Home Assistant.
 Uses Chrome's native remote debugging instead of Selenium/ChromeDriver.
 
-Requirements: Python 3.8+ and Google Chrome (or Chromium)
+Requirements: Python 3.8+ and a Chromium-based browser (Chrome, Chromium, or Brave)
 
 Usage:
     python KIA_TOKEN.py              # interactive (default locale from system)
@@ -156,25 +156,31 @@ def build_redirect_url() -> str:
 # Chrome path detection
 # ---------------------------------------------------------------------------
 
-def get_chrome_path() -> Optional[str]:
-    """Find Chrome/Chromium executable for the current OS."""
+def get_browser_path() -> Optional[str]:
+    """Find Chrome, Chromium, or Brave executable for the current OS."""
     system = platform.system()
     candidates = {
         "Darwin": [
             "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
             "/Applications/Chromium.app/Contents/MacOS/Chromium",
+            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
         ],
         "Linux": [
             "/usr/bin/google-chrome",
             "/usr/bin/google-chrome-stable",
             "/usr/bin/chromium",
             "/usr/bin/chromium-browser",
+            "/usr/bin/brave-browser",
+            "/usr/bin/brave-browser-stable",
         ],
         "Windows": [
             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
             str(Path.home() / "AppData" / "Local" / "Google" / "Chrome" / "Application" / "chrome.exe"),
             r"C:\Program Files\Chromium\Application\chrome.exe",
+            r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+            r"C:\Program Files (x86)\BraveSoftware\Brave-Browser\Application\brave.exe",
+            str(Path.home() / "AppData" / "Local" / "BraveSoftware" / "Brave-Browser" / "Application" / "brave.exe"),
         ],
     }
 
@@ -183,7 +189,8 @@ def get_chrome_path() -> Optional[str]:
             return path
 
     # Try PATH lookup as last resort
-    for name in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser"):
+    for name in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser",
+                 "brave-browser", "brave-browser-stable"):
         found = shutil.which(name)
         if found:
             return found
@@ -285,10 +292,11 @@ def kill_existing_debug_session(port: int) -> None:
 
 def launch_chrome(login_url: str, port: int) -> subprocess.Popen:
     """Launch Chrome with remote debugging enabled."""
-    chrome_path = get_chrome_path()
+    chrome_path = get_browser_path()
     if not chrome_path:
-        print("[ERROR] Chrome/Chromium not found.")
-        print("  Install: https://www.google.com/chrome/")
+        print("[ERROR] No supported browser found (Chrome, Chromium, or Brave).")
+        print("  Install Chrome: https://www.google.com/chrome/")
+        print("  Install Brave:  https://brave.com/download/")
         sys.exit(1)
 
     # Check display on Linux
