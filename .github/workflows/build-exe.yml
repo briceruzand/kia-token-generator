@@ -4,6 +4,11 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name of existing release to attach EXE to (e.g. v2.5.2)'
+        required: true
+        type: string
 
 jobs:
   build-windows:
@@ -31,4 +36,7 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.tag_name || github.event.release.tag_name }}
           files: dist/KIA_TOKEN.exe
+          generate_release_notes: true
+
