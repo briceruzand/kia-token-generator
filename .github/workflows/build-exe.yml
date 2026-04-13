@@ -1,9 +1,8 @@
 name: Build Windows EXE
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -30,7 +29,6 @@ jobs:
           path: dist/KIA_TOKEN.exe
 
       - name: Upload to Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/KIA_TOKEN.exe
