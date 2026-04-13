@@ -10,6 +10,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -36,7 +39,5 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.tag_name || github.event.release.tag_name }}
+          tag_name: ${{ inputs.tag_name || github.event.release.tag_name }}
           files: dist/KIA_TOKEN.exe
-          generate_release_notes: true
-
