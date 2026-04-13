@@ -602,7 +602,7 @@ def main() -> None:
 
     for tick in range(LOGIN_TIMEOUT):
         # Check if Chrome was closed by the user
-        if chrome.poll() is not None:
+        if chrome.poll() is not None and not cdp_port_alive(port):
             print("[ERROR] Chrome was closed unexpectedly.")
             sys.exit(1)
 
@@ -652,7 +652,7 @@ def main() -> None:
     print(f"[DEBUG] Looking for redirect to: {REDIRECT_URL_FINAL}")
     code = None
     for i in range(REDIRECT_TIMEOUT):
-        if chrome.poll() is not None:
+        if chrome.poll() is not None and not cdp_port_alive(port):
             print("[ERROR] Chrome was closed unexpectedly during redirect.")
             sys.exit(1)
 
@@ -680,12 +680,16 @@ def main() -> None:
 
     # Close Chrome — no longer needed, code has been captured
     print("[INFO] Closing browser...")
-    chrome.terminate()
-    try:
-        chrome.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        chrome.kill()
-        chrome.wait()  # prevent zombie process
+    if chrome.poll() is None:
+        chrome.terminate()
+        try:
+            chrome.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            chrome.kill()
+            chrome.wait()  # prevent zombie process
+    else:
+        # Process already exited but browser may still be alive via CDP
+        kill_existing_debug_session(port)
 
     # Cleanup temp profile
     profile_dir = Path(tempfile.gettempdir()) / "kia-token-chrome-profile"
